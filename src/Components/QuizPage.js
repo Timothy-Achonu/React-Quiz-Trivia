@@ -17,6 +17,7 @@ export default function QuizPage(props) {
         // console.log(option.selected)
             const listStyles = {
                 backgroundColor : option.selected ? "green" : "white",
+                color : option.selected ? "white" : "black",
             }
             return (
                     <li 
