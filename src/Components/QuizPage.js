@@ -13,12 +13,34 @@ export default function QuizPage(props) {
     // let listElements = []
     // let realListElements = []
     // console.log(props.choices)
+    // console.log(props.finished)
+
     const optionsElements = props.choicesObject.map((option,index) => {
         // console.log(option.selected)
-            const listStyles = {
-                backgroundColor : option.selected ? "green" : "white",
-                color : option.selected ? "white" : "black",
+            let listStyles = {
+                backgroundColor : optionBgColor(),  
             }
+            // let listStyles = {
+            //     backgroundColor : option.selected ? "#D6DBF5" : "white", 
+            // }
+           
+            function optionBgColor() {
+                let bgColor;
+                if(option.selected) {
+                    bgColor = "#D6DBF5"
+                }
+                if(option.correct) {
+                    bgColor = "green"
+                }
+                if(option.failed) {
+                    bgColor = "#F8BCBC"
+                }
+                // else {
+                //     bgColor = "white"
+                // }
+                return bgColor;
+            }
+
             return (
                     <li 
                     onClick={() => props.select(option.id, option.question)}

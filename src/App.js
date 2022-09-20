@@ -6,11 +6,9 @@ import QuizPage from "./Components/QuizPage";
 function App() {
   const [startQuiz, setStartQuiz] = React.useState(false);
   const [quiz, setQuiz] = React.useState([]);
-  const [select, setSelect] = React.useState(false);
-  const [options, setOptions] = React.useState([])
-
+  const [options, setOptions] = React.useState([]);
   React.useEffect(() => {
-    fetch("https://opentdb.com/api.php?amount=5&difficulty=medium")
+    fetch("https://opentdb.com/api.php?amount=50&difficulty=medium")
       .then((res) => res.json())
       .then((data) => {
         // console.log(data.results);
@@ -18,37 +16,37 @@ function App() {
         setQuiz(data.results);
       });
   }, []);
-  console.log(quiz);
+  // console.log(quiz);
   // console.log(options);
 
-  let questionOptions = []
-  quiz.forEach( (eachQuiz,questionNum) => {
-    let options = [...eachQuiz.incorrect_answers]
-    let randomIndex = Math.
-    floor(Math.random() * (options.length + 1));
+  let questionOptions = [];
+  quiz.forEach((eachQuiz, questionNum) => {
+    let options = [...eachQuiz.incorrect_answers];
+    let randomIndex = Math.floor(Math.random() * (options.length + 1));
     // console.log(randomIndex)
-    options.splice(randomIndex,0,eachQuiz.correct_answer);
+    options.splice(randomIndex, 0, eachQuiz.correct_answer);
     const optionsObject = options.map((option, index) => {
       return {
-        value : option,
-        id : index,
-        selected : false,
-        question : questionNum
-      }
-    })
+        value: option,
+        id: index,
+        selected: false,
+        question: questionNum,
+        failed: false,
+        correct: false,
+      };
+    });
     // console.log(optionObjects);
-    questionOptions.push(optionsObject)
-  })
+    questionOptions.push(optionsObject);
+  });
 
   const questionElements = quiz.map((eachQuiz, questionNum) => {
     // let options = eachQuiz.incorrect_answers;
     // options.push(eachQuiz.correct_answer);
     //what is above modify the original in gotten from the
     //API and also modifies the quiz state.
-    let questionOptions = [...eachQuiz.incorrect_answers]
+    let questionOptions = [...eachQuiz.incorrect_answers];
     questionOptions.push(eachQuiz.correct_answer);
-    const optionArray = []
-   
+
     return (
       <QuizPage
         question={eachQuiz.question}
@@ -61,31 +59,71 @@ function App() {
     );
   });
 
-
   function handleStartQuiz() {
     setStartQuiz(true);
-    setOptions(questionOptions)
+    setOptions(questionOptions);
   }
   // console.log(options)
-  
+
   function handleSelect(id, questionNum) {
     // setSelect(prevSelect => !prevSelect);
-    setOptions(preOptions => {
-      return  preOptions.map((item) => {
-                return  item.map(obj => {
-                          if(obj.question === questionNum) {
-                            return obj.id === id ?
-                                    {...obj, selected : !obj.selected} :
-                                    {...obj, selected : false}
-                          }
-                          else {
-                            return obj
-                          }
-                        })
-          
-              })
-    })
+    setOptions((preOptions) => {
+      return preOptions.map((item) => {
+        return item.map((obj) => {
+          if (obj.question === questionNum) {
+            return obj.id === id
+              ? { ...obj, selected: !obj.selected }
+              : { ...obj, selected: false };
+          } else {
+            return obj;
+          }
+        });
+      });
+    });
   }
+
+  function checkAnswers() {
+    let eachOptionArray;
+    let newOptionsArray = [];
+    setOptions((preOptions) => {
+      quiz.forEach((item, index) => {
+        eachOptionArray = preOptions[index].map((obj) => {
+          if (obj.selected) {
+            return item.correct_answer == obj.value
+              ? { ...obj, correct: true }
+              : { ...obj, failed: true };
+          } else {
+            return item.correct_answer == obj.value
+              ? { ...obj, correct: true }
+              : obj;
+          }
+        });
+        newOptionsArray.push(eachOptionArray);
+      });
+      console.log(newOptionsArray);
+      return newOptionsArray;
+    });
+    console.log(quiz);
+
+    quiz.forEach((question, index) => {
+      // console.log(question, options[index])
+      // console.log(options[index])
+      options[index].forEach((option) => {
+        if (option.selected) {
+          if (question.correct_answer == option.value) {
+            // console.log('correct')
+          } else {
+            // console.log('failed')
+          }
+        }
+        if (option.value == question.correct_answer) {
+          // console.log('setCorrect answer')
+        }
+      });
+    });
+  }
+  console.log(options);
+
   const stylesTop = {
     right: startQuiz ? "-180px" : "-50px",
     top: startQuiz ? "-70px" : "-20px",
@@ -96,24 +134,23 @@ function App() {
     bottom: startQuiz ? "0px" : "0px",
   };
 
-
   return (
-      <div className="app-container">
-        {!startQuiz && <StartQuiz start={handleStartQuiz} />}
-        {
-          startQuiz &&
-          <div className="quiz-section">
-            {questionElements}
-            
-            <button className="check-answers">
-                Check answers
-              </button>
-            
-          </div>
-        }
-        <div className="top-design" style={stylesTop}> </div>
-        <div className="bottom-design" style={stylesBottom}></div>
+    <div className="app-container">
+      {!startQuiz && <StartQuiz start={handleStartQuiz} />}
+      {startQuiz && (
+        <div className="quiz-section">
+          {questionElements}
+
+          <button className="check-answers" onClick={checkAnswers}>
+            Check answers
+          </button>
+        </div>
+      )}
+      <div className="top-design" style={stylesTop}>
+        {" "}
       </div>
+      <div className="bottom-design" style={stylesBottom}></div>
+    </div>
   );
 }
 
