@@ -155,3 +155,36 @@ hr {
     cursor: pointer;
 }
 
+.loading {
+    margin-top: 250px;
+}
+
+.quiz-end {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 10px;
+    flex-wrap: wrap;
+
+}
+
+.bottom-text {
+    font-size: 1.2rem;
+    margin-top:10px;
+
+}
+.play-again {
+    width: 193px;
+    height: 52px;
+    background: #4D5B9E;
+    border-radius: 15px;
+    font-style: normal;
+    font-weight: 500;
+    font-size: 1.2rem;
+    line-height: 19px;
+    text-align: center;
+    color: #F5F7FB;
+    cursor: pointer;
+    margin:0 10px;
+    margin-top:10px;
+}

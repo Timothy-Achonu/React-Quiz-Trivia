@@ -7,61 +7,89 @@ function App() {
   const [startQuiz, setStartQuiz] = React.useState(false);
   const [quiz, setQuiz] = React.useState([]);
   const [options, setOptions] = React.useState([]);
+  const [dataArrived, setDataArrived] = React.useState(false);
+  const [error, setError] = React.useState("");
+  const [isPending, setIsPending] = React.useState(true);
+  const [quizEnded, setQuizEnded] = React.useState(false);
+  const [score, setScore] = React.useState(0);
+  const [playAgain, setPlayAgain] = React.useState(false);
+
   React.useEffect(() => {
-    fetch("https://opentdb.com/api.php?amount=50&difficulty=medium")
-      .then((res) => res.json())
+    fetch("https://opentdb.com/api.php?amount=5&difficulty=medium")
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`${res.status} Could not fetch data`);
+        }
+        return res.json();
+      })
       .then((data) => {
-        // console.log(data.results);
-        // console.log("Effect Ran!!")
-        setQuiz(data.results);
+        setIsPending(false);
+        if (data.results.length) {
+          setQuiz(data.results);
+          setDataArrived(true);
+        } else {
+          throw new Error("Could not fetch data");
+        }
+      })
+      .catch((err) => {
+        setError(err);
       });
-  }, []);
+  }, [playAgain]);
   // console.log(quiz);
   // console.log(options);
 
   let questionOptions = [];
-  quiz.forEach((eachQuiz, questionNum) => {
-    let options = [...eachQuiz.incorrect_answers];
-    let randomIndex = Math.floor(Math.random() * (options.length + 1));
-    // console.log(randomIndex)
-    options.splice(randomIndex, 0, eachQuiz.correct_answer);
-    const optionsObject = options.map((option, index) => {
-      return {
-        value: option,
-        id: index,
-        selected: false,
-        question: questionNum,
-        failed: false,
-        correct: false,
-      };
+  let questionElements = [];
+
+  if (dataArrived) {
+    BeginQuiz();
+  }
+
+  function BeginQuiz() {
+    quiz.forEach((eachQuiz, questionNum) => {
+      let options = [...eachQuiz.incorrect_answers];
+      let randomIndex = Math.floor(Math.random() * (options.length + 1));
+      // console.log(randomIndex)
+      options.splice(randomIndex, 0, eachQuiz.correct_answer);
+      const optionsObject = options.map((option, index) => {
+        return {
+          value: option,
+          id: index,
+          selected: false,
+          question: questionNum,
+          failed: false,
+          correct: false,
+        };
+      });
+      // console.log(optionObjects);
+      questionOptions.push(optionsObject);
     });
-    // console.log(optionObjects);
-    questionOptions.push(optionsObject);
-  });
 
-  const questionElements = quiz.map((eachQuiz, questionNum) => {
-    // let options = eachQuiz.incorrect_answers;
-    // options.push(eachQuiz.correct_answer);
-    //what is above modify the original in gotten from the
-    //API and also modifies the quiz state.
-    let questionOptions = [...eachQuiz.incorrect_answers];
-    questionOptions.push(eachQuiz.correct_answer);
+    questionElements = quiz.map((eachQuiz, questionNum) => {
+      // let options = eachQuiz.incorrect_answers;
+      // options.push(eachQuiz.correct_answer);
+      //what is above modify the original in gotten from the
+      //API and also modifies the quiz state.
+      let questionOptions = [...eachQuiz.incorrect_answers];
+      questionOptions.push(eachQuiz.correct_answer);
 
-    return (
-      <QuizPage
-        question={eachQuiz.question}
-        answer={eachQuiz.correct_answer}
-        choices={questionOptions}
-        choicesObject={options[questionNum]}
-        select={handleSelect}
-        key={questionNum}
-      />
-    );
-  });
+      return (
+        <QuizPage
+          question={eachQuiz.question}
+          answer={eachQuiz.correct_answer}
+          choices={questionOptions}
+          choicesObject={options[questionNum]}
+          select={handleSelect}
+          key={questionNum}
+        />
+      );
+    });
+  }
 
   function handleStartQuiz() {
     setStartQuiz(true);
     setOptions(questionOptions);
+    setQuizEnded(false);
   }
   // console.log(options)
 
@@ -81,17 +109,21 @@ function App() {
       });
     });
   }
-
   function checkAnswers() {
+    let score = 0;
+    setQuizEnded(true);
     let eachOptionArray;
     let newOptionsArray = [];
     setOptions((preOptions) => {
       quiz.forEach((item, index) => {
         eachOptionArray = preOptions[index].map((obj) => {
           if (obj.selected) {
-            return item.correct_answer == obj.value
-              ? { ...obj, correct: true }
-              : { ...obj, failed: true };
+            if (item.correct_answer == obj.value) {
+              score++;
+              return { ...obj, correct: true };
+            } else {
+              return { ...obj, failed: true };
+            }
           } else {
             return item.correct_answer == obj.value
               ? { ...obj, correct: true }
@@ -100,29 +132,20 @@ function App() {
         });
         newOptionsArray.push(eachOptionArray);
       });
-      console.log(newOptionsArray);
+      console.log(score);
+      setScore(score)
+      // console.log(newOptionsArray);
       return newOptionsArray;
     });
-    console.log(quiz);
 
-    quiz.forEach((question, index) => {
-      // console.log(question, options[index])
-      // console.log(options[index])
-      options[index].forEach((option) => {
-        if (option.selected) {
-          if (question.correct_answer == option.value) {
-            // console.log('correct')
-          } else {
-            // console.log('failed')
-          }
-        }
-        if (option.value == question.correct_answer) {
-          // console.log('setCorrect answer')
-        }
-      });
-    });
   }
-  console.log(options);
+  console.log(score)
+  function handlePlayAgain() {
+    setPlayAgain((prevPlay) => !prevPlay);
+    setQuizEnded(false);
+    setStartQuiz(false);
+  }
+  // console.log(options);
 
   const stylesTop = {
     right: startQuiz ? "-180px" : "-50px",
@@ -139,11 +162,22 @@ function App() {
       {!startQuiz && <StartQuiz start={handleStartQuiz} />}
       {startQuiz && (
         <div className="quiz-section">
-          {questionElements}
-
-          <button className="check-answers" onClick={checkAnswers}>
-            Check answers
-          </button>
+          {isPending && <h1 className="loading">Loading...</h1>}
+          {!dataArrived && <h1 className="loading">{error}</h1>}
+          {dataArrived && startQuiz && questionElements}
+          {dataArrived && !quizEnded && (
+            <button className="check-answers" onClick={checkAnswers}>
+              Check answers
+            </button>
+          )}
+          {quizEnded && (
+            <div className="quiz-end">
+              <p className="bottom-text"> {`You scored ${score}/${options.length} correct answers` }</p>
+              <button className="play-again" onClick={handlePlayAgain}>
+                Play again
+              </button>
+            </div>
+          )}
         </div>
       )}
       <div className="top-design" style={stylesTop}>
