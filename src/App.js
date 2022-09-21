@@ -95,19 +95,21 @@ function App() {
 
   function handleSelect(id, questionNum) {
     // setSelect(prevSelect => !prevSelect);
-    setOptions((preOptions) => {
-      return preOptions.map((item) => {
-        return item.map((obj) => {
-          if (obj.question === questionNum) {
-            return obj.id === id
-              ? { ...obj, selected: !obj.selected }
-              : { ...obj, selected: false };
-          } else {
-            return obj;
-          }
+    if(!quizEnded) {
+      setOptions((preOptions) => {
+        return preOptions.map((item) => {
+          return item.map((obj) => {
+            if (obj.question === questionNum) {
+              return obj.id === id
+                ? { ...obj, selected: !obj.selected }
+                : { ...obj, selected: false };
+            } else {
+              return obj;
+            }
+          });
         });
       });
-    });
+    }
   }
   function checkAnswers() {
     let score = 0;
