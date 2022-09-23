@@ -52,13 +52,17 @@ body {
     text-align: center;
     color: #293264;
 }
-
+.start-quiz-wrapper .input-num {
+    height: 40px;
+    margin-top: 20px;
+    font-size: 1.2rem;
+}
 .start-quiz-wrapper button {
     width: 193px;
     height: 52px;
     left: 179px;
     top: 314px;
-    background: #4D5B9E;
+    background: hsla(230, 34%, 46%, 3);
     border-radius: 15px;
     margin-top: 25px;
     font-style: normal;
@@ -68,6 +72,7 @@ body {
     text-align: center;
     color: #F5F7FB;
     cursor: pointer;
+    opacity: 3;
 }
 
 .top-design {

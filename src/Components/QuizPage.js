@@ -6,9 +6,8 @@ export default function QuizPage(props) {
     var doc = new DOMParser().parseFromString(input, "text/html");
     return doc.documentElement.textContent;
   }
-
   let optionsElements;
-  if (props.choicesObject) {
+  if (props.question) {
     optionsElements = props.choicesObject.map((option, index) => {
       let listStyles = optionColor();
 

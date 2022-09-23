@@ -5,6 +5,7 @@ import QuizPage from "./Components/QuizPage";
 
 function App() {
   const [startQuiz, setStartQuiz] = React.useState(false);
+  const [numberOfQues, setNumberOfQues] = React.useState(0);
   const [quiz, setQuiz] = React.useState([]);
   const [options, setOptions] = React.useState([]);
   const [dataArrived, setDataArrived] = React.useState(false);
@@ -13,11 +14,26 @@ function App() {
   const [quizEnded, setQuizEnded] = React.useState(false);
   const [score, setScore] = React.useState(0);
   const [playAgain, setPlayAgain] = React.useState(false);
+  const [questionReady, setQuestionReady] = React.useState(false);
+  // const [questionElements, setQuestionElements] = React.useState([])
 
   React.useEffect(() => {
-    fetch("https://opentdb.com/api.php?amount=5&difficulty=medium")
+    // console.log("effect ran");
+    if (startQuiz) {
+      // console.log("effect ran 2");
+      fetchData(
+        `https://opentdb.com/api.php?amount=${numberOfQues}&difficulty=medium`
+      );
+    }
+  }, [startQuiz]);
+  // console.log(quiz);
+  // console.log(options);
+  function fetchData(url) {
+    // console.log("fetch ran");
+    fetch(url)
       .then((res) => {
         if (!res.ok) {
+          console.log(res.status);
           throw new Error(`${res.status} Could not fetch data`);
         }
         return res.json();
@@ -25,6 +41,25 @@ function App() {
       .then((data) => {
         setIsPending(false);
         if (data.results.length) {
+          // console.log(data.results);
+          let questionOptions = [];
+          data.results.forEach((eachQuiz, questionNum) => {
+            let options = [...eachQuiz.incorrect_answers];
+            let randomIndex = Math.floor(Math.random() * (options.length + 1));
+            options.splice(randomIndex, 0, eachQuiz.correct_answer);
+            const optionsObject = options.map((option, index) => {
+              return {
+                value: option,
+                id: index,
+                selected: false,
+                question: questionNum,
+                failed: false,
+                correct: false,
+              };
+            });
+            questionOptions.push(optionsObject);
+          });
+          setOptions(questionOptions);
           setQuiz(data.results);
           setDataArrived(true);
         } else {
@@ -32,70 +67,43 @@ function App() {
         }
       })
       .catch((err) => {
-        setError(err);
+        console.log(err.message);
+        setError(err.message);
       });
-  }, [playAgain]);
-  // console.log(quiz);
-  // console.log(options);
-
-  let questionOptions = [];
-  let questionElements = [];
-
-  if (dataArrived) {
-    BeginQuiz();
-  }
-
-  function BeginQuiz() {
-    quiz.forEach((eachQuiz, questionNum) => {
-      let options = [...eachQuiz.incorrect_answers];
-      let randomIndex = Math.floor(Math.random() * (options.length + 1));
-      // console.log(randomIndex)
-      options.splice(randomIndex, 0, eachQuiz.correct_answer);
-      const optionsObject = options.map((option, index) => {
-        return {
-          value: option,
-          id: index,
-          selected: false,
-          question: questionNum,
-          failed: false,
-          correct: false,
-        };
-      });
-      // console.log(optionObjects);
-      questionOptions.push(optionsObject);
-    });
-
-    questionElements = quiz.map((eachQuiz, questionNum) => {
-      // let options = eachQuiz.incorrect_answers;
-      // options.push(eachQuiz.correct_answer);
-      //what is above modify the original in gotten from the
-      //API and also modifies the quiz state.
-      let questionOptions = [...eachQuiz.incorrect_answers];
-      questionOptions.push(eachQuiz.correct_answer);
-
-      return (
-        <QuizPage
-          question={eachQuiz.question}
-          answer={eachQuiz.correct_answer}
-          choices={questionOptions}
-          choicesObject={options[questionNum]}
-          select={handleSelect}
-          key={questionNum}
-        />
-      );
-    });
   }
 
   function handleStartQuiz() {
-    setStartQuiz(true);
-    setOptions(questionOptions);
-    setQuizEnded(false);
+    // console.log("handle");
+    if (numberOfQues > 0) {
+      setStartQuiz(true);
+      setQuizEnded(false);
+    }
   }
-  // console.log(options)
 
+  let questionElements = [];
+  questionElements = quiz.map((eachQuiz, questionNum) => {
+    let questionOptions = [...eachQuiz.incorrect_answers];
+    questionOptions.push(eachQuiz.correct_answer);
+    return (
+      <QuizPage
+        question={eachQuiz.question}
+        answer={eachQuiz.correct_answer}
+        choices={questionOptions}
+        choicesObject={options[questionNum]}
+        select={handleSelect}
+        key={questionNum}
+      />
+    );
+  });
+
+  function handleChangeInput(e) {
+    // console.log(startQuiz, dataArrived);
+    // console.log(e.target.value);
+    setNumberOfQues(e.target.value);
+  }
   function handleSelect(id, questionNum) {
     // setSelect(prevSelect => !prevSelect);
-    if(!quizEnded) {
+    if (!quizEnded) {
       setOptions((preOptions) => {
         return preOptions.map((item) => {
           return item.map((obj) => {
@@ -111,12 +119,16 @@ function App() {
       });
     }
   }
+
   function checkAnswers() {
-    let score = 0;
+    let score;;
     setQuizEnded(true);
+
     let eachOptionArray;
     let newOptionsArray = [];
     setOptions((preOptions) => {
+      score = 0;
+      newOptionsArray = [];
       quiz.forEach((item, index) => {
         eachOptionArray = preOptions[index].map((obj) => {
           if (obj.selected) {
@@ -135,17 +147,20 @@ function App() {
         newOptionsArray.push(eachOptionArray);
       });
       console.log(score);
-      setScore(score)
-      // console.log(newOptionsArray);
+      setScore(score);
+      console.log(newOptionsArray);
       return newOptionsArray;
     });
-
   }
-  console.log(score)
+
   function handlePlayAgain() {
     setPlayAgain((prevPlay) => !prevPlay);
     setQuizEnded(false);
     setStartQuiz(false);
+    setQuestionReady(false);
+    setNumberOfQues(0)
+    setDataArrived(false)
+    setIsPending(true)
   }
   // console.log(options);
 
@@ -158,15 +173,20 @@ function App() {
     left: startQuiz ? "-130px" : "-50px",
     bottom: startQuiz ? "0px" : "0px",
   };
-
   return (
     <div className="app-container">
-      {!startQuiz && <StartQuiz start={handleStartQuiz} />}
+      {!startQuiz && (
+        <StartQuiz
+          start={handleStartQuiz}
+          number={numberOfQues}
+          changeInput={handleChangeInput}
+        />
+      )}
       {startQuiz && (
         <div className="quiz-section">
           {isPending && <h1 className="loading">Loading...</h1>}
           {!dataArrived && <h1 className="loading">{error}</h1>}
-          {dataArrived && startQuiz && questionElements}
+          {dataArrived && questionElements}
           {dataArrived && !quizEnded && (
             <button className="check-answers" onClick={checkAnswers}>
               Check answers
@@ -174,7 +194,10 @@ function App() {
           )}
           {quizEnded && (
             <div className="quiz-end">
-              <p className="bottom-text"> {`You scored ${score}/${options.length} correct answers` }</p>
+              <p className="bottom-text">
+                {" "}
+                {`You scored ${score}/${options.length} correct answers`}
+              </p>
               <button className="play-again" onClick={handlePlayAgain}>
                 Play again
               </button>
